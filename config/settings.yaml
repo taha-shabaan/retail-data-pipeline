@@ -1,0 +1,25 @@
+project:
+  name: retail-data-pipeline
+  batch_id: dev
+
+paths:
+  data_root: ./data
+  raw: ./data/raw
+  bronze: ./data/bronze
+  silver: ./data/silver
+  gold: ./data/gold
+  # TODO: UNderstand what this is for
+  duckdb: ./data/duckdb/retail_analytics.duckdb
+postgres:
+  host: localhost
+  port: 15432
+  database: retail
+  user: retail
+  # password from POSTGRES_PASSWORD env
+
+parquet_sources:
+  product_supplement: product_supplement.parquet
+
+marts:
+  daily_store_sales: mart_daily_store_sales
+  product_performance: mart_product_performance
