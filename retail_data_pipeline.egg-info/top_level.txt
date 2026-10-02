@@ -1,5 +1,0 @@
-analysis
-ingest
-load
-pipeline
-transform
