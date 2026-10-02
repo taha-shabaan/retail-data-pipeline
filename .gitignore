@@ -19,3 +19,4 @@ data/duckdb/
 .cursor/*
 .agent/*
 .vscode/*
+.agents.md
