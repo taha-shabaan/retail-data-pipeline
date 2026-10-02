@@ -12,7 +12,7 @@ def build_agg_data(clean_data: pd.DataFrame) -> pd.DataFrame:
     agg_data = (
         clean_data.groupby("Month", as_index=False)["Weekly_Sales"]
         .mean()
-        .rename(columns={"Weekly_Sales": "Weekly_Sales"})
+        .rename(columns={"Weekly_Sales": "Agg_weekly_Sales"})
         .sort_values("Month")
         .reset_index(drop=True)
     )

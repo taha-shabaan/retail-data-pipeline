@@ -16,3 +16,6 @@ data/duckdb/
 .DS_Store
 .idea/
 .vscode/
+.cursor/*
+.agent/*
+.vscode/*

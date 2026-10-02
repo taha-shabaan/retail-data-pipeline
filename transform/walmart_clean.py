@@ -18,8 +18,6 @@ CLEAN_DATA_COLUMNS = [
 ]
 
 
-
-
 def build_clean_data(grocery_sales: pd.DataFrame, extra_data: pd.DataFrame) -> pd.DataFrame:
     """Merge SQL and Parquet sources; derive month; keep analysis-ready columns."""
     sales = grocery_sales.copy()
@@ -46,7 +44,6 @@ def build_clean_data(grocery_sales: pd.DataFrame, extra_data: pd.DataFrame) -> p
 
     return clean_data.reset_index(drop=True)
 
-
 # Sum nulls in the data
 def sumNulls(clean_data: pd.DataFrame):
     # Print the number of nulls in each column
@@ -61,9 +58,10 @@ def main():
     settings_obj = load_settings()
     grocery_sales = extract_grocery_sales(settings_obj)
     extra_data = read_extra_data(settings_obj)
-    clean_data = build_clean_data(grocery_sales, extra_data)
+    clean_data= build_clean_data(grocery_sales, extra_data)
+
     info_clean_data(clean_data)
-    sumNulls(clean_data)
+    # sumNulls(clean_data)
 
 
 if __name__ == "__main__":
