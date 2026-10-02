@@ -1,12 +1,12 @@
 [project]
 name = "retail-data-pipeline"
-version = "0.1.0"
-description = "Batch ETL for Walmart-style retail data (SQL + Parquet)"
+version = "0.2.0"
+description = "Walmart holiday sales pipeline — PostgreSQL grocery_sales + extra_data Parquet"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "duckdb>=1.1.0",
-    "polars>=1.9.0",
+    "pandas>=2.2.0",
+    "sqlalchemy>=2.0.0",
     "psycopg[binary]>=3.2.0",
     "python-dotenv>=1.0.0",
     "pyyaml>=6.0.0",
@@ -24,7 +24,7 @@ requires = ["setuptools>=69"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["ingest*", "transform*", "model*", "load*", "pipeline*"]
+include = ["ingest*", "transform*", "analysis*", "load*", "pipeline*"]
 exclude = ["tests*", "data*", "docker*", "config*", "docs*", "scripts*"]
 
 [tool.pytest.ini_options]

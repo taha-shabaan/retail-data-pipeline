@@ -5,7 +5,7 @@
       "args": [
         "/home/taha/.cursor/extensions/hurtis.todo-2.0.0-universal/bin/todo-mcp.js",
         "--workspace",
-        "/home/taha/projects/AI/data_engineer/projects/retail-data-pipeline"
+        "/home/taha/contents/AI/data_engineer/projects/retail-data-pipeline"
       ]
     }
   }

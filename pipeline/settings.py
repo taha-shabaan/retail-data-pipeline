@@ -15,6 +15,8 @@ class PostgresSettings:
     database: str
     user: str
     password: str
+    schema: str
+    table: str
 
 
 @dataclass(frozen=True)
@@ -23,11 +25,25 @@ class PipelineSettings:
     data_root: Path
     raw_dir: Path
     bronze_dir: Path
-    silver_dir: Path
-    gold_dir: Path
-    duckdb_path: Path
+    processed_dir: Path
     postgres: PostgresSettings
-    product_supplement_filename: str
+    grocery_sales_filename: str
+    extra_data_filename: str
+    clean_data_csv_name: str
+    agg_data_csv_name: str
+    # extra_data_columns: list[str]
+
+    @property
+    def extra_data_path(self) -> Path:
+        return self.raw_dir / self.extra_data_filename
+
+    @property
+    def clean_data_path(self) -> Path:
+        return self.processed_dir / self.clean_data_csv_name
+
+    @property
+    def agg_data_path(self) -> Path:
+        return self.processed_dir / self.agg_data_csv_name
 
 
 def load_settings(config_path: Path | None = None) -> PipelineSettings:
@@ -39,40 +55,40 @@ def load_settings(config_path: Path | None = None) -> PipelineSettings:
 
     batch_id = os.getenv("BATCH_ID", raw["project"]["batch_id"])
 
+    # extra_data_columns = raw["parquet_sources"]["extra_data_columns"]
+    # extra_data_columns = [column["name"] for column in extra_data_columns]
+
+
     def resolve_path(value: str) -> Path:
         path = Path(value)
         if path.is_absolute():
             return path
         return (root / path).resolve()
 
-    data_root = resolve_path(os.getenv("DATA_ROOT", raw["paths"]["data_root"]))
-
     pg = raw["postgres"]
+    outputs = raw["outputs"]
     return PipelineSettings(
         batch_id=batch_id,
-        data_root=data_root,
+        data_root=resolve_path(os.getenv("DATA_ROOT", raw["paths"]["data_root"])),
         raw_dir=resolve_path(raw["paths"]["raw"]),
         bronze_dir=resolve_path(raw["paths"]["bronze"]),
-        silver_dir=resolve_path(raw["paths"]["silver"]),
-        gold_dir=resolve_path(raw["paths"]["gold"]),
-        duckdb_path=resolve_path(raw["paths"]["duckdb"]),
+        processed_dir=resolve_path(raw["paths"]["processed"]),
         postgres=PostgresSettings(
             host=os.getenv("POSTGRES_HOST", pg["host"]),
             port=int(os.getenv("POSTGRES_PORT", pg["port"])),
             database=os.getenv("POSTGRES_DB", pg["database"]),
             user=os.getenv("POSTGRES_USER", pg["user"]),
             password=os.getenv("POSTGRES_PASSWORD", "retail"),
+            schema=pg["schema"],
+            table=pg["table"],
         ),
-        product_supplement_filename=raw["parquet_sources"]["product_supplement"],
+        extra_data_filename=raw["parquet_sources"]["extra_data"],
+        grocery_sales_filename=raw["sql_sources"]["grocery_sales"],
+        clean_data_csv_name=outputs["clean_data_csv"],
+        agg_data_csv_name=outputs["agg_data_csv"],
     )
 
 
 def ensure_data_dirs(settings: PipelineSettings) -> None:
-    for directory in (
-        settings.raw_dir,
-        settings.bronze_dir,
-        settings.silver_dir,
-        settings.gold_dir,
-        settings.duckdb_path.parent,
-    ):
+    for directory in (settings.raw_dir, settings.bronze_dir, settings.processed_dir):
         directory.mkdir(parents=True, exist_ok=True)

@@ -17,8 +17,7 @@ down:
 	docker compose -f docker/compose.yml down
 
 seed: up
-	@echo "Waiting for Postgres..."
-	@sleep 3
+	.venv/bin/python scripts/seed_postgres.py
 	.venv/bin/python scripts/generate_sample_parquet.py
 
 pipeline:
@@ -28,8 +27,8 @@ test:
 	pytest -q
 
 lint:
-	ruff check ingest transform model load pipeline tests scripts
-	ruff format --check ingest transform model load pipeline tests scripts
+	ruff check ingest transform analysis load pipeline tests scripts
+	ruff format --check ingest transform analysis load pipeline tests scripts
 
 fmt:
-	ruff format ingest transform model load pipeline tests scripts
+	ruff format ingest transform analysis load pipeline tests scripts

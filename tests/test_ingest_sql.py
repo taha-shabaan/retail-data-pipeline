@@ -2,16 +2,17 @@ import os
 
 import pytest
 
-from ingest.sql.postgres import extract_table
+from ingest.sql.postgres import extract_grocery_sales
 from pipeline.settings import load_settings
 
 pytestmark = pytest.mark.skipif(
     os.getenv("CI") != "true" and not os.getenv("RUN_SQL_INTEGRATION"),
-    reason="PostgreSQL integration test (set RUN_SQL_INTEGRATION=1 or run in CI)",
+    reason="PostgreSQL integration (CI or RUN_SQL_INTEGRATION=1)",
 )
 
 
-def test_extract_stores():
+def test_extract_grocery_sales():
     settings = load_settings()
-    df = extract_table(settings, "stores")
-    assert df.height >= 3
+    df = extract_grocery_sales(settings)
+    assert len(df) >= 1
+    assert "Weekly_Sales" in df.columns

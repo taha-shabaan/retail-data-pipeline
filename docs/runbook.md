@@ -2,47 +2,53 @@
 
 ## Prerequisites
 
-- Docker (for PostgreSQL)
+- Docker
 - Python 3.11+
 
-## First-time setup
+## First run
 
 ```bash
 cp .env.example .env
 make setup
-make seed    # starts Postgres + writes sample Parquet to data/raw/
+make seed      # docker up + extra_data.parquet + Postgres seed
 make pipeline
 ```
 
-## Verify output
+## Outputs
+
+| File | Description |
+|------|-------------|
+| `data/processed/clean_data.csv` | Merged features |
+| `data/processed/agg_data.csv` | Monthly mean weekly sales |
+
+Preview:
 
 ```bash
-# DuckDB CLI if installed:
-duckdb data/duckdb/retail_analytics.duckdb -c "SELECT * FROM mart_daily_store_sales LIMIT 5;"
-
-# Or Python:
-.venv/bin/python -c "import duckdb; print(duckdb.connect('data/duckdb/retail_analytics.duckdb').sql('SELECT * FROM mart_daily_store_sales').df())"
+.venv/bin/python -c "import pandas as pd; print(pd.read_csv('data/processed/agg_data.csv'))"
 ```
 
-PostgreSQL listens on host port **15432** by default (see `docker/compose.yml`) to avoid clashing with a local Postgres on 5432.
+## Docker services
 
-Gold Parquet files appear under `data/gold/batch_id=dev/`.
+| Service | Host port | Notes |
+|---------|-----------|--------|
+| `postgres` | 15432 | Database `retail`, user/password `retail` |
+| Parquet mount | — | Host `data/raw` → container `/data/raw` (read-only) |
 
-## Common failures
+Regenerate Parquet only:
 
-| Symptom | Likely cause | Fix |
-|---------|--------------|-----|
-| Connection refused to Postgres | Container not up | `make up`, wait for healthy status |
-| Missing Parquet source | Raw file not generated | `make seed` or `python scripts/generate_sample_parquet.py` |
-| Schema validation error on supplement | Column drift in file | Align with `docs/data_dictionary.md` |
-| Empty marts | Seed SQL not loaded | Recreate volume: `make down`, `docker volume prune` (careful), `make seed` |
+```bash
+.venv/bin/python scripts/generate_sample_parquet.py
+```
 
-## Backfill (manual)
+## Troubleshooting
 
-1. Set `BATCH_ID` and optional date filters in SQL (future: watermark table).
-2. Run `make pipeline`.
-3. Compare row counts in bronze vs silver vs gold logs.
+| Issue | Fix |
+|-------|-----|
+| Port 15432 in use | Change host port in `docker/compose.yml` and `config/settings.yaml` |
+| `extra_data.parquet` missing | Run `make seed` |
+| Empty `clean_data` | Confirm seed SQL dates match Parquet `Date` values |
+| Auth failed on Postgres | Check `.env` matches Docker credentials |
 
 ## CI
 
-GitHub Actions runs `ruff` and `pytest` with a Postgres service and applies `docker/init/*.sql`.
+GitHub Actions applies `docker/init/*.sql`, generates Parquet, runs unit tests. Full pipeline integration runs when Postgres service is available.

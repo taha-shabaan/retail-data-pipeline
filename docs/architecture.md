@@ -1,61 +1,74 @@
 # Architecture
 
-## Problem
+## Business driver
 
-Retail analytics depends on **operational SQL** (stores, products, transactions) and **file-based history or partner feeds** (Parquet). Data engineers unify those sources into **trusted, easy-to-query marts** without forcing analysts to understand every upstream quirk.
+Walmart’s mix of **stores and e-commerce** makes **holiday and seasonal demand** a first-class planning input. This pipeline supports **supply and demand analysis** by joining **weekly grocery sales** (PostgreSQL) with **complementary Parquet** features (holidays, macro indicators, departments, store format).
 
-This project is **inspired by Walmart-style multinational retail**. It is an educational portfolio piece—not affiliated with Walmart.
+See [business-requirements.md](business-requirements.md) for stakeholders and scope.
 
-## Context diagram
+## System context
 
 ```
-┌─────────────────────┐     ┌──────────────────────────┐
-│ PostgreSQL          │     │ Parquet (raw/)           │
-│ operational.*       │     │ product_supplement       │
-└─────────┬───────────┘     └────────────┬─────────────┘
-          │ extract                      │ extract
-          └──────────────┬───────────────┘
-                         ▼
-                 ┌───────────────┐
-                 │ bronze/       │  batch_id partition
-                 └───────┬───────┘
-                         ▼
-                 ┌───────────────┐
-                 │ transform     │  quality rules, enrich
-                 └───────┬───────┘
-                         ▼
-                 ┌───────────────┐
-                 │ silver/       │  dim_*, fct_sales
-                 └───────┬───────┘
-                         ▼
-                 ┌───────────────┐
-                 │ gold marts    │  wide tables for BI
-                 └───────┬───────┘
-                         ▼
-          ┌──────────────┴──────────────┐
-          ▼                             ▼
-   Parquet (gold/)              DuckDB file
+                    ┌─────────────────────────────────────┐
+                    │         Docker Compose              │
+                    │  ┌─────────────┐  /data/raw (ro)   │
+                    │  │ PostgreSQL  │◄── extra_data     │
+                    │  │ grocery_sales                  │
+                    │  └──────┬──────┘                    │
+                    └─────────┼──────────────────────────┘
+                              │ JDBC / psycopg
+                              ▼
+┌──────────────────────────────────────────────────────────────┐
+│                    pipeline/run_batch.py                      │
+│  ingest/sql ──► ingest/parquet ──► transform ──► analysis   │
+│                                         │              │       │
+│                                         ▼              ▼       │
+│                                   clean_data      agg_data     │
+│                                         └──────┬───────┘       │
+│                                                ▼               │
+│                                         load/csv_export        │
+└──────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+              data/processed/clean_data.csv
+              data/processed/agg_data.csv
 ```
 
-## Layers
+## Components
 
-| Layer | Purpose | Location |
-|-------|---------|----------|
-| Operational | Source of truth for live retail entities | PostgreSQL `operational` schema |
-| Raw / bronze | Immutable-ish landing with batch metadata | `data/bronze/batch_id=…` |
-| Silver | Cleaned entities + fact at documented grain | `data/silver/…`, `fct_sales` = **line item** |
-| Gold | Wide marts for consumption | `mart_daily_store_sales`, `mart_product_performance` |
+| Layer | Responsibility | Technology |
+|-------|----------------|------------|
+| Source — SQL | Weekly store sales | PostgreSQL 16, schema `walmart` |
+| Source — files | Holidays, CPI, unemployment, dept/store attrs | Parquet on host + volume mount |
+| Bronze | Immutable extract snapshots | Parquet under `data/bronze/batch_id=…` |
+| Transform | Join, typing, column contract | pandas |
+| Analysis | Monthly aggregation | pandas |
+| Serve | Analyst deliverables | CSV in `data/processed/` |
 
-## Design choices
+## Data flow and grain
 
-1. **Two extract patterns, one pipeline contract** — SQL and Parquet both land in bronze before transform.
-2. **Star logic, wide delivery** — Facts and dims exist in silver; gold exposes join-light marts.
-3. **Batch orchestration in code** — `pipeline/run_batch.py` is the unit you would schedule; no orchestrator in MVP.
-4. **Config vs secrets** — Paths and names in `config/settings.yaml`; credentials in `.env`.
+| Stage | Grain | Notes |
+|-------|--------|------|
+| `grocery_sales` | Store × week | One `Weekly_Sales` per store per `Date` |
+| `extra_data` | Store × week × dept | Multiple departments per store-week |
+| `clean_data` | Store × week × dept | `Weekly_Sales` repeated per dept row from join |
+| `agg_data` | Month | Mean `Weekly_Sales` across all `clean_data` rows in month |
 
-## Production extensions (documented, not built)
+## Design decisions
 
-- Watermarked incremental SQL extract
-- Dead-letter quarantine for bad Parquet rows
-- OpenTelemetry metrics on row counts and duration per stage
-- Airflow/Dagster DAG calling the same stages
+1. **pandas** — project standard for merge, cleaning, and aggregation; readable for portfolio and course alignment.
+2. **Inner join** — guarantees every analytic row has both sales and context; left join would be phase 2 for data-quality quarantine.
+3. **Docker Postgres + host Parquet** — SQL realism without uploading Parquet into the DB; Compose mounts `data/raw` so both sources are visible in the same stack.
+4. **Bronze before transform** — supports replay and debugging (“what did extract look like on batch X?”).
+
+## Security and operations
+
+- Credentials: `POSTGRES_*` in `.env` (see `.env.example`).
+- No PII in sample data; replace with governed datasets in production.
+- Runbook: [runbook.md](runbook.md). Step-by-step: [pipeline-steps.md](pipeline-steps.md).
+
+## Phase 2 extensions
+
+- Orchestrator with SLA monitors on row counts and max(`Date`).
+- Great Expectations/Soda on `clean_data` contract.
+- Separate **e-commerce** fact table and unified customer view.

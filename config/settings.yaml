@@ -6,20 +6,22 @@ paths:
   data_root: ./data
   raw: ./data/raw
   bronze: ./data/bronze
-  silver: ./data/silver
-  gold: ./data/gold
-  # TODO: UNderstand what this is for
-  duckdb: ./data/duckdb/retail_analytics.duckdb
+  processed: ./data/processed
+
 postgres:
   host: localhost
   port: 15432
   database: retail
   user: retail
-  # password from POSTGRES_PASSWORD env
+  schema: walmart
+  table: grocery_sales
 
 parquet_sources:
-  product_supplement: product_supplement.parquet
+  extra_data: extra_data.parquet
 
-marts:
-  daily_store_sales: mart_daily_store_sales
-  product_performance: mart_product_performance
+sql_sources:
+  grocery_sales: grocery_sales.sql
+
+outputs:
+  clean_data_csv: clean_data.csv
+  agg_data_csv: agg_data.csv

@@ -10,6 +10,7 @@ data/raw/
 data/bronze/
 data/silver/
 data/gold/
+data/processed/
 data/duckdb/
 *.duckdb
 .DS_Store

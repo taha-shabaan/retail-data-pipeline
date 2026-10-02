@@ -9,7 +9,10 @@ services:
     ports:
       - "15432:5432"
     volumes:
+      # SQL schema + grocery_sales seed
       - ./init:/docker-entrypoint-initdb.d:ro
+      # Complementary Parquet (extra_data.parquet) — generate with: make seed
+      - ../data/raw:/data/raw:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U retail -d retail"]
       interval: 5s

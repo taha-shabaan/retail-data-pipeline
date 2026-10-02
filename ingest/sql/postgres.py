@@ -3,49 +3,74 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-import polars as pl
-import psycopg
+import pandas as pd
+import sqlalchemy as sa
 
-from pipeline.settings import PipelineSettings
+from pipeline.settings import PipelineSettings, load_settings
 
 logger = logging.getLogger(__name__)
 
-QUERIES_DIR = Path(__file__).resolve().parent / "queries"
+# get the path to the grocery_sales.sql query file
+QUERY_PATH = Path(__file__).resolve().parent / "queries" / "grocery_sales.sql"
 
 
-def _load_query(name: str) -> str:
-    path = QUERIES_DIR / f"{name}.sql"
-    return path.read_text(encoding="utf-8")
-
-
-def _connect(settings: PipelineSettings) -> psycopg.Connection:
+def _connect(settings: PipelineSettings) -> sa.Connection:
+    # get the connection information from the settings
     pg = settings.postgres
+    # create the connection string
     conninfo = (
-        f"host={pg.host} port={pg.port} dbname={pg.database} "
-        f"user={pg.user} password={pg.password}"
+        f"postgresql://{pg.user}:{pg.password}@{pg.host}:{pg.port}/{pg.database}"
     )
-    return psycopg.connect(conninfo)
+    # create the connection engine
+    return sa.create_engine(conninfo).connect()
 
 
-def extract_table(settings: PipelineSettings, entity: str) -> pl.DataFrame:
-    query = _load_query(entity)
-    logger.info("Extracting %s from PostgreSQL", entity)
-    with _connect(settings) as conn, conn.cursor() as cur:
-        cur.execute(query)
-        columns = [desc[0] for desc in cur.description]
-        rows = cur.fetchall()
-    return pl.DataFrame({col: [row[i] for row in rows] for i, col in enumerate(columns)})
+# extract the grocery_sales data from the PostgreSQL database
+def extract_grocery_sales(settings: PipelineSettings) -> pd.DataFrame:
+    # get the query from the query file
+
+    # query = QUERY_PATH.read_text(encoding="utf-8")
+    query = "SELECT * FROM walmart.grocery_sales;"
+    print(query)
+    # log the query
+    logger.info("Extracting walmart.grocery_sales from PostgreSQL: %s", query)
+    # connect to the database
+    with _connect(settings) as conn:
+        # read the query into a pandas dataframe
+        df = pd.read_sql(query, conn)
+    # log the number of rows extracted
+    logger.info("Extracted %s grocery_sales rows", len(df))
+    return df
 
 
-def extract_all_sql(settings: PipelineSettings) -> dict[str, pl.DataFrame]:
-    entities = ("stores", "products", "transaction_lines")
-    return {name: extract_table(settings, name) for name in entities}
-
-
-def write_bronze_sql(settings: PipelineSettings, frames: dict[str, pl.DataFrame]) -> None:
+# validate the grocery_sales dataframe
+def write_bronze_grocery_sales(settings: PipelineSettings, df: pd.DataFrame) -> Path:
+    # get the path to the output directory
     out_dir = settings.bronze_dir / f"batch_id={settings.batch_id}" / "sql"
+    # create the output directory if it doesn't exist
     out_dir.mkdir(parents=True, exist_ok=True)
-    for name, df in frames.items():
-        path = out_dir / f"{name}.parquet"
-        df.write_parquet(path)
-        logger.info("Wrote bronze %s (%s rows)", path, df.height)
+    path = out_dir / settings.grocery_sales_filename
+    df.to_csv(path, index=False)
+    # log the path of the file that was written
+    logger.info("Wrote bronze %s", path)
+    # return the path of the file that was written
+    return path
+
+def main():
+    settings = load_settings()
+    df = extract_grocery_sales(settings)
+    write_bronze_grocery_sales(settings, df)
+    print(df.head())
+    print(df.shape)
+    print(df.columns)
+    print(df.dtypes)
+    print(df.info())
+    print(df.describe())
+    # print(df.corr())
+    # print(df.cov())
+    # print(df.skew())
+    # print(df.kurt())
+    # print(df.mad())
+
+if __name__ == "__main__":
+    main()

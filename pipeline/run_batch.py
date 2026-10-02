@@ -3,48 +3,43 @@ from __future__ import annotations
 import logging
 import sys
 
-from ingest.parquet.reader import read_product_supplement, write_bronze_parquet
-from ingest.sql.postgres import extract_all_sql, write_bronze_sql
-from load.duckdb_loader import load_marts, write_gold_parquet
-from model.marts.build import build_gold_marts
+from analysis.monthly_sales import build_agg_data
+from ingest.parquet.reader import read_extra_data, write_bronze_extra_data
+from ingest.sql.postgres import extract_grocery_sales, write_bronze_grocery_sales
+from load.csv_export import save_deliverables
 from pipeline.logging_setup import configure_logging
 from pipeline.settings import ensure_data_dirs, load_settings
-from transform.quality.checks import build_silver
+from transform.walmart_clean import build_clean_data
 
 logger = logging.getLogger(__name__)
 
 
-def run() -> int:
+def run() -> tuple[object, object]:
     configure_logging()
     settings = load_settings()
     ensure_data_dirs(settings)
-    logger.info("Starting batch pipeline batch_id=%s", settings.batch_id)
+    logger.info("Starting Walmart holiday sales pipeline batch_id=%s", settings.batch_id)
 
-    sql_frames = extract_all_sql(settings)
-    write_bronze_sql(settings, sql_frames)
+    grocery_sales = extract_grocery_sales(settings)
+    write_bronze_grocery_sales(settings, grocery_sales)
 
-    supplement = read_product_supplement(settings)
-    write_bronze_parquet(settings, supplement)
+    extra_data = read_extra_data(settings)
+    write_bronze_extra_data(settings, extra_data)
 
-    silver = build_silver(
-        stores=sql_frames["stores"],
-        products=sql_frames["products"],
-        lines=sql_frames["transaction_lines"],
-        supplement=supplement,
+    clean_data = build_clean_data(grocery_sales, extra_data)
+    agg_data = build_agg_data(clean_data)
+
+    save_deliverables(
+        clean_data,
+        agg_data,
+        settings.clean_data_path,
+        settings.agg_data_path,
     )
 
-    silver_out = settings.silver_dir / f"batch_id={settings.batch_id}"
-    silver_out.mkdir(parents=True, exist_ok=True)
-    for name, df in silver.items():
-        df.write_parquet(silver_out / f"{name}.parquet")
-
-    marts = build_gold_marts(silver)
-    write_gold_parquet(settings.gold_dir, settings.batch_id, marts)
-    load_marts(settings.duckdb_path, marts)
-
-    logger.info("Pipeline finished successfully")
-    return 0
+    logger.info("Pipeline finished — clean_data and agg_data CSVs ready")
+    return clean_data, agg_data
 
 
 if __name__ == "__main__":
-    sys.exit(run())
+    run()
+    sys.exit(0)

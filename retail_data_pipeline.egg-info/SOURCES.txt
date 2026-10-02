@@ -1,10 +1,10 @@
-LICENSE
 README.md
 pyproject.toml
+analysis/monthly_sales.py
+ingest/merge.py
 ingest/parquet/reader.py
 ingest/sql/postgres.py
-load/duckdb_loader.py
-model/marts/build.py
+load/csv_export.py
 pipeline/logging_setup.py
 pipeline/run_batch.py
 pipeline/settings.py
@@ -15,6 +15,7 @@ retail_data_pipeline.egg-info/requires.txt
 retail_data_pipeline.egg-info/top_level.txt
 tests/test_ingest_parquet.py
 tests/test_ingest_sql.py
-tests/test_model_marts.py
-tests/test_transform_quality.py
-transform/quality/checks.py
+tests/test_monthly_sales.py
+tests/test_seed_postgres.py
+tests/test_walmart_clean.py
+transform/walmart_clean.py

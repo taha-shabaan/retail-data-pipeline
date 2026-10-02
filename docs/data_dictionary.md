@@ -1,67 +1,56 @@
 # Data dictionary
 
-## Operational (PostgreSQL)
-
-### `operational.stores`
+## PostgreSQL — `walmart.grocery_sales`
 
 | Column | Type | Description |
 |--------|------|-------------|
-| store_id | integer | Surrogate key |
-| store_name | text | Display name |
-| state_code | char(2) | US state |
-| opened_date | date | Store open date |
+| index | integer | Row id from source export |
+| Store_ID | integer | Store identifier |
+| Date | date | Week of sales (reporting week) |
+| Dept | integer | Department number |
+| Weekly_Sales | numeric | Sales dollars for that store-week-department |
 
-### `operational.products`
-
-| Column | Type | Description |
-|--------|------|-------------|
-| product_id | integer | Surrogate key |
-| product_name | text | SKU description |
-| category | text | Default category |
-| unit_price | numeric | Current list price |
-
-### `operational.transaction_lines`
+## Parquet — `data/raw/extra_data.parquet`
 
 | Column | Type | Description |
 |--------|------|-------------|
-| line_id | bigint | Line surrogate key |
-| transaction_id | bigint | Basket / receipt id |
-| store_id | integer | FK → stores |
-| product_id | integer | FK → products |
-| sale_date | date | Business sale date |
-| quantity | integer | Units sold (> 0) |
-| unit_price | numeric | Price at time of sale |
+| Store_ID | integer | Store identifier (join key) |
+| Date | date | Week date (join key) |
+| IsHoliday | integer | 1 if week contains a public holiday, else 0 |
+| Temperature | float | Temperature on day of sale |
+| Fuel_Price | float | Regional fuel price |
+| CPI | float | Consumer price index |
+| Unemployment | float | Unemployment rate |
+| MarkDown1 … MarkDown4 | float | Promotional markdown counts |
+| Dept | integer | Department number in store |
+| Size | integer | Store size metric |
+| Type | string | Store type (related to Size) |
 
-**Grain:** one row per line item.
-
-## Parquet supplement (`data/raw/product_supplement.parquet`)
+## Pipeline output — `clean_data`
 
 | Column | Type | Description |
 |--------|------|-------------|
-| product_id | int64 | Join key to products |
-| category_override | string | Optional category correction from file feed |
-| is_promotional | bool | Promo flag from partner file |
+| Store_ID | integer | Store |
+| Month | float | Calendar month from `Date` |
+| Dept | integer | Department |
+| IsHoliday | integer | Holiday flag |
+| Weekly_Sales | float | Store-week sales from SQL |
+| CPI | float | Macro index |
+| Unemployment | float | Macro rate |
 
-## Silver
+## Pipeline output — `agg_data`
 
-### `fct_sales`
+| Column | Type | Description |
+|--------|------|-------------|
+| Month | float | Calendar month |
+| Weekly_Sales | float | Mean of `Weekly_Sales` in `clean_data` for that month |
 
-Line-level fact with `line_revenue = quantity * unit_price`.
+## File locations
 
-### `dim_store`, `dim_product`
-
-Conformed dimensions after enrich/join rules.
-
-## Gold marts
-
-### `mart_daily_store_sales`
-
-| Grain | Columns (core) |
-|-------|----------------|
-| sale_date + store_id | total_revenue, units_sold, transaction_count, store attributes |
-
-### `mart_product_performance`
-
-| Grain | Columns (core) |
-|-------|----------------|
-| product_id | total_revenue, units_sold, store_count, product attributes |
+| Artifact | Path |
+|----------|------|
+| Raw Parquet | `data/raw/extra_data.parquet` |
+| Bronze SQL extract | `data/bronze/batch_id=<id>/sql/grocery_sales.parquet` |
+| Bronze Parquet extract | `data/bronze/batch_id=<id>/parquet/extra_data.parquet` |
+| clean_data CSV | `data/processed/clean_data.csv` |
+| agg_data CSV | `data/processed/agg_data.csv` |
