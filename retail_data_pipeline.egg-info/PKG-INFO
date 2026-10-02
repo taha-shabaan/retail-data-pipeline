@@ -1,3 +1,20 @@
+Metadata-Version: 2.4
+Name: retail-data-pipeline
+Version: 0.2.0
+Summary: Walmart holiday sales pipeline — PostgreSQL grocery_sales + extra_data Parquet
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: pandas>=2.2.0
+Requires-Dist: sqlalchemy>=2.0.0
+Requires-Dist: psycopg[binary]>=3.2.0
+Requires-Dist: python-dotenv>=1.0.0
+Requires-Dist: pyyaml>=6.0.0
+Requires-Dist: pyarrow>=17.0.0
+Requires-Dist: matplotlib>=3.8.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0.0; extra == "dev"
+Requires-Dist: ruff>=0.6.0; extra == "dev"
+
 # Retail Data Pipeline — Walmart holiday sales
 
 Batch data pipeline for **supply and demand analysis around public holidays** at a Walmart-scale US retailer. It combines **weekly grocery sales** from **PostgreSQL** with **complementary Parquet** (`extra_data.parquet`), builds `clean_data`, runs a **monthly sales summary** (`agg_data`), and exports **CSV** deliverables.
@@ -40,9 +57,7 @@ Architecture diagram: [docs/architecture.md](docs/architecture.md).
 
 After `make pipeline`, the batch job writes CSVs under `data/processed/` and refreshes the chart below (also saved to `docs/assets/` for the repo).
 
-![Average weekly grocery sales by calendar month](docs/assets/monthly_avg_weekly_sales.svg)
-
-PNG for slides or LinkedIn: `data/processed/monthly_avg_weekly_sales.png` (after `make pipeline`).
+![Average weekly grocery sales by calendar month](docs/assets/monthly_avg_weekly_sales.png)
 
 | Insight | What it means |
 | -------- | --------------- |
@@ -56,8 +71,6 @@ Regenerate the chart without re-querying Postgres (CSV must exist):
 ```bash
 make results
 ```
-
-**Sample run (local data):** peak month **Dec**, holiday-week sales about **+7%** vs non-holiday weeks—see the chart footnote after `make pipeline` or `make results`.
 
 **LinkedIn / portfolio angle:** *Batch pipeline that merges PostgreSQL weekly grocery sales with Parquet holiday and macro features, exports analysis-ready CSVs, and surfaces one seasonal chart for merchandising conversations.*
 
@@ -120,8 +133,6 @@ Dictionary: [docs/data_dictionary.md](docs/data_dictionary.md).
 | [ingest/parquet/](ingest/parquet/)                       | Extract `extra_data.parquet`               |
 | [transform/walmart_clean.py](transform/walmart_clean.py) | Merge → `clean_data`                       |
 | [analysis/monthly_sales.py](analysis/monthly_sales.py)   | `agg_data`                                 |
-| [analysis/insights.py](analysis/insights.py)             | Peak month & holiday lift metrics          |
-| [analysis/results_chart.py](analysis/results_chart.py)   | Results chart (SVG + PNG)                  |
 | [load/csv_export.py](load/csv_export.py)                 | CSV deliverables                           |
 | [docs/](docs/)                                           | Business requirements, architecture, steps |
 

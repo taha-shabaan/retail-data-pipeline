@@ -25,3 +25,5 @@ sql_sources:
 outputs:
   clean_data_csv: clean_data.csv
   agg_data_csv: agg_data.csv
+  results_chart_png: monthly_avg_weekly_sales.png
+  results_chart_docs: docs/assets/monthly_avg_weekly_sales.svg

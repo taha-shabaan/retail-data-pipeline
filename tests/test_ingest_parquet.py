@@ -39,8 +39,11 @@ def settings(tmp_path: Path) -> PipelineSettings:
             "localhost", 15432, "retail", "retail", "retail", "walmart", "grocery_sales"
         ),
         extra_data_filename="extra_data.parquet",
+        grocery_sales_filename="grocery_sales.sql",
         clean_data_csv_name="clean_data.csv",
         agg_data_csv_name="agg_data.csv",
+        results_chart_png_name="monthly_avg_weekly_sales.png",
+        results_chart_docs_path=tmp_path / "chart.svg",
     )
 
 

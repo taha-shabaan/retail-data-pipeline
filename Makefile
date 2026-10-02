@@ -1,9 +1,9 @@
-.PHONY: setup up down seed pipeline test lint fmt help
+.PHONY: setup up down seed pipeline results test lint fmt help
 
 export PYTHONPATH := $(CURDIR)
 
 help:
-	@echo "Targets: setup | up | down | seed | pipeline | test | lint | fmt"
+	@echo "Targets: setup | up | down | seed | pipeline | results | test | lint | fmt"
 
 setup:
 	python3 -m venv .venv
@@ -22,6 +22,9 @@ seed: up
 
 pipeline:
 	.venv/bin/python pipeline/run_batch.py
+
+results:
+	.venv/bin/python scripts/render_results.py
 
 test:
 	pytest -q

@@ -95,6 +95,18 @@ Validates expected columns (holiday flag, macro series, markdowns, `Dept`, `Size
 
 ---
 
+## Step 5b — Results chart (portfolio / BI preview)
+
+| Item | Detail |
+|------|--------|
+| Modules | `analysis/insights.py`, `analysis/results_chart.py` |
+| Outputs | `data/processed/monthly_avg_weekly_sales.png`, `docs/assets/monthly_avg_weekly_sales.svg` |
+| Refresh only | `make results` (reads processed CSVs, no Postgres) |
+
+**Why:** One visual + headline metrics (peak month, holiday lift) for README and LinkedIn without waiting on a full BI stack.
+
+---
+
 ## Step 6 — Orchestration entrypoint
 
 | Item | Detail |
@@ -118,4 +130,6 @@ PostgreSQL (grocery_sales)     extra_data.parquet
             monthly analysis  →  agg_data
                     ▼
               clean_data.csv / agg_data.csv
+                    ▼
+         results chart (PNG + SVG)
 ```

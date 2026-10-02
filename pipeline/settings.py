@@ -31,6 +31,8 @@ class PipelineSettings:
     extra_data_filename: str
     clean_data_csv_name: str
     agg_data_csv_name: str
+    results_chart_png_name: str
+    results_chart_docs_path: Path
     # extra_data_columns: list[str]
 
     @property
@@ -44,6 +46,10 @@ class PipelineSettings:
     @property
     def agg_data_path(self) -> Path:
         return self.processed_dir / self.agg_data_csv_name
+
+    @property
+    def results_chart_path(self) -> Path:
+        return self.processed_dir / self.results_chart_png_name
 
 
 def load_settings(config_path: Path | None = None) -> PipelineSettings:
@@ -86,6 +92,8 @@ def load_settings(config_path: Path | None = None) -> PipelineSettings:
         grocery_sales_filename=raw["sql_sources"]["grocery_sales"],
         clean_data_csv_name=outputs["clean_data_csv"],
         agg_data_csv_name=outputs["agg_data_csv"],
+        results_chart_png_name=outputs["results_chart_png"],
+        results_chart_docs_path=resolve_path(outputs["results_chart_docs"]),
     )
 
 
