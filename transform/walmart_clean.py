@@ -37,13 +37,13 @@ def build_clean_data(grocery_sales: pd.DataFrame, extra_data: pd.DataFrame) -> p
 
     # convert Date to datetime
     merged["Month"] = pd.to_datetime(merged["Date"]).dt.month.astype(int) # datetime to month
-
+    
+    # copy the columns to the clean_data dataframe
     clean_data = merged[CLEAN_DATA_COLUMNS].copy()
 
     clean_data["CPI"] = clean_data["CPI"].fillna(clean_data["CPI"].mean())
     clean_data["Unemployment"] = clean_data["Unemployment"].fillna(clean_data["Unemployment"].ffill())
 
-  #  clean_data = clean_data.dropna(subset=["Weeklyf_Sales", "CPI", "Unemployment"])
     return clean_data.reset_index(drop=True)
 
 
