@@ -58,9 +58,7 @@ make results
 ```
 
 **Sample run (local data):** peak month **Dec**, holiday-week sales about **+7%** vs non-holiday weeks—see the chart footnote after `make pipeline` or `make results`.
-
-**LinkedIn / portfolio angle:** *Batch pipeline that merges PostgreSQL weekly grocery sales with Parquet holiday and macro features, exports analysis-ready CSVs, and surfaces one seasonal chart for merchandising conversations.*
-
+`
 ## Sources
 
 
