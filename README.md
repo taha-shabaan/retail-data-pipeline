@@ -41,9 +41,7 @@ Architecture diagram: [docs/architecture.md](docs/architecture.md).
 After `make pipeline`, the batch job writes CSVs under `data/processed/` and refreshes the chart below (also saved to `docs/assets/` for the repo).
 
 ![Average weekly grocery sales by calendar month](docs/assets/monthly_avg_weekly_sales.svg)
-
-PNG for slides or LinkedIn: `data/processed/monthly_avg_weekly_sales.png` (after `make pipeline`).
-
+        
 | Insight | What it means |
 | -------- | --------------- |
 | **Monthly trend** | `agg_data` is the mean of `Weekly_Sales` across all store–department rows in each calendar month— a first view for seasonal planning. |
